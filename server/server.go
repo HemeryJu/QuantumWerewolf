@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 
 	"github.com/golang/protobuf/ptypes/empty"
@@ -12,19 +11,20 @@ import (
 )
 
 type Options struct {
+	Port int `json:"port"`
 }
 
-func GetServerOptions(path string) *Options {
+func GetServerOptions(path string) (*Options, error) {
 	contents, err := ioutil.ReadFile(path)
 	if err != nil {
-		panic(fmt.Sprintf("unable to read server config file, err: %s", err.Error()))
+		return nil, err
 	}
-	var config *Options
-	err = json.Unmarshal(contents, config)
+	var config Options
+	err = json.Unmarshal(contents, &config)
 	if err != nil {
-		panic(fmt.Sprintf("unable to parse server config file, err: %s", err.Error()))
+		return nil, err
 	}
-	return config
+	return &config, nil
 }
 
 type Server struct {

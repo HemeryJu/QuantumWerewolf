@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"net"
 
 	"google.golang.org/grpc"
 
@@ -16,10 +18,21 @@ func init() {
 }
 
 func main() {
-	options := server.GetServerOptions(serverOptionsPath)
+	options, err := server.GetServerOptions(serverOptionsPath)
+	if err != nil {
+		panic(fmt.Sprintf("fail to fetch server config, err: %s", err.Error()))
+	}
 	svc := server.NewServer(options)
 
-	listener := grpc.NewServer()
+	grpcServer := grpc.NewServer()
 
-	pb.RegisterWerewolfServerServer(listener, svc)
+	pb.RegisterWerewolfServerServer(grpcServer, svc)
+
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", options.Port))
+	if err != nil {
+		panic(fmt.Sprintf("fail to create listener, err: %s", err.Error()))
+	}
+
+	err = grpcServer.Serve(lis)
+	panic(fmt.Sprintf("fail to create listener, err: %s", err.Error()))
 }
