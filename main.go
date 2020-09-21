@@ -6,6 +6,7 @@ import (
 	"net"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/HemeryJu/QuantumWerewolf/pb"
 	"github.com/HemeryJu/QuantumWerewolf/server"
@@ -27,6 +28,7 @@ func main() {
 	grpcServer := grpc.NewServer()
 
 	pb.RegisterWerewolfServerServer(grpcServer, svc)
+	reflection.Register(grpcServer)
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", options.Port))
 	if err != nil {
