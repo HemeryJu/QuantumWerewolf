@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package="github.com/HemeryJu/QuantumWerewolf/pb";
+
+import "google/protobuf/empty.proto";
+
+service WerewolfServer {
+    rpc Start(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
