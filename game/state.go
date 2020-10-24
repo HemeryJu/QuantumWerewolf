@@ -71,6 +71,15 @@ func (s *RoleState) MatchAndRemoveRole(roleMatch multiMatch, deathMatch simpleMa
 	s.deathStates = s.deathStates[:n-r]
 }
 
+func (s *RoleState) MatchAndKill(roleMatch multiMatch, deathMatch simpleMatch, player int) {
+	for i := range s.roleStates {
+		if !roleMatch(s.roleStates[i]) || !deathMatch(s.deathStates[i]) {
+			continue
+		}
+		s.deathStates[i] |= newFilter().addPlayer(player)
+	}
+}
+
 func (s *RoleState) VoteAndKill(voteFilter map[int]filter, voteCount map[int]int, victims []int) {
 	for i := range s.deathStates {
 		max := 0
@@ -164,6 +173,23 @@ func (s *State) RemoveIfMatch(playerStates ...PlayerState) {
 	}
 
 	s.removeIfMatch(match)
+}
+
+func (s *State) KillIfMatch(player int, playerStates ...PlayerState) {
+	if playerStates == nil {
+		return
+	}
+
+	matchCamp := s.getMatchCamp(playerStates)
+	matchRole := s.getMatchRole(playerStates)
+	matchDeath := s.getMatchDeath(playerStates)
+
+	for _, rs := range s.states {
+		if !rs.MatchCamp(matchCamp) {
+			continue
+		}
+		rs.MatchAndKill(matchRole, matchDeath, player)
+	}
 }
 
 func (s *State) CheckDeath() []int {
