@@ -5,6 +5,8 @@ import (
 	"sort"
 )
 
+// TODO : Kill by werewolf
+// TODO : Populate global death variable
 // TODO : Init state
 
 // RoleState represents a possible campIndex repartition
@@ -49,22 +51,6 @@ func (s *RoleState) MatchAndCount(roleMatch multiMatch, deathMatch simpleMatch) 
 		}
 	}
 	return count
-}
-
-func (s *RoleState) MatchAndCountDeath(roleMatch multiMatch, deathMatch simpleMatch, playerFilter simpleMatch) (int, int) {
-	alive := 0
-	death := 0
-	for i := range s.roleStates {
-		if !roleMatch(s.roleStates[i]) || !deathMatch(s.deathStates[i]) {
-			continue
-		}
-		if playerFilter(s.deathStates[i]) {
-			death++
-			continue
-		}
-		alive++
-	}
-	return alive, death
 }
 
 func (s *RoleState) MatchAndRemoveRole(roleMatch multiMatch, deathMatch simpleMatch) {
@@ -166,30 +152,6 @@ func (s *State) GetPlayerCampProb(player int, playerStates ...PlayerState) map[C
 	for camp, index := range s.campIndex {
 		prob[camp] = float64(campCount[index]) / float64(total)
 	}
-	return prob
-}
-
-func (s *State) GetPlayerLiveProb(player int, playerStates ...PlayerState) map[Status]float64 {
-	matchCamp := s.getMatchCamp(playerStates)
-	matchPlayer := s.getMatchPlayer(player)
-	matchRole := s.getMatchRole(playerStates)
-	matchDeath := s.getMatchDeath(playerStates)
-
-	aliveCount := 0
-	deathCount := 0
-	for _, roleState := range s.states {
-		if !roleState.MatchCamp(matchCamp) {
-			continue
-		}
-		alive, death := roleState.MatchAndCountDeath(matchRole, matchDeath, matchPlayer)
-		aliveCount += alive
-		deathCount += death
-	}
-
-	prob := make(map[Status]float64, 2)
-	prob[Alive] = float64(aliveCount) / float64(aliveCount+deathCount)
-	prob[Dead] = float64(deathCount) / float64(aliveCount+deathCount)
-
 	return prob
 }
 
@@ -427,5 +389,4 @@ func (s *State) removeIfMatch(match func(rs *RoleState) bool) {
 		i++
 	}
 	s.states = s.states[:n-r]
-	s.stateCount = total
 }
