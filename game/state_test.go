@@ -262,3 +262,48 @@ func TestState_KillIfMatch(t *testing.T) {
 		require.InDelta(t, tc.expectedDeath, prob[Dead], 0.01, "error while testing, test %d", i)
 	}
 }
+
+func TestState_VoteAndKillPlayer(t *testing.T) {
+	type testCase struct {
+		votes map[int]int
+		expectedDeath map[int]float64
+	}
+
+	testCases := []testCase{
+		{
+			votes: map[int]int{
+				0:3,
+				1:3,
+				2:3,
+				3:4,
+				4:3,
+			},
+			expectedDeath: map[int]float64{
+				3: 1.0,
+			},
+		},
+		{
+			votes: map[int]int{
+				0:2,
+				1:4,
+				2:4,
+				3:1,
+				4:1,
+			},
+			expectedDeath: map[int]float64{
+				1: 0.25,
+				4: 0.375,
+			},
+		},
+	}
+
+	for i, tc := range testCases {
+		stateTest := getTestStates()
+		stateTest.VoteAndKillPlayer(tc.votes)
+
+		for player, expected := range tc.expectedDeath {
+			prob := stateTest.GetPlayerLiveProb(player)
+			require.InDelta(t, expected, prob[Dead], 0.01, "error while testing, test %d, player %d", i, player)
+		}
+	}
+}
