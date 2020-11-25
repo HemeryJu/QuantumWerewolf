@@ -5,8 +5,6 @@ import (
 	"sort"
 )
 
-// TODO : Kill by werewolf
-// TODO : Populate global death variable
 // TODO : Init state
 
 // RoleState represents a possible campIndex repartition
@@ -53,6 +51,22 @@ func (s *RoleState) MatchAndCount(roleMatch multiMatch, deathMatch simpleMatch) 
 	return count
 }
 
+func (s *RoleState) MatchAndCountDeath(roleMatch multiMatch, deathMatch simpleMatch, playerFilter simpleMatch) (int, int) {
+	alive := 0
+	death := 0
+	for i := range s.roleStates {
+		if !roleMatch(s.roleStates[i]) || !deathMatch(s.deathStates[i]) {
+			continue
+		}
+		if playerFilter(s.deathStates[i]) {
+			death++
+			continue
+		}
+		alive++
+	}
+	return alive, death
+}
+
 func (s *RoleState) MatchAndRemoveRole(roleMatch multiMatch, deathMatch simpleMatch) {
 	i := 0
 	r := 0
@@ -76,7 +90,7 @@ func (s *RoleState) MatchAndKill(roleMatch multiMatch, deathMatch simpleMatch, p
 		if !roleMatch(s.roleStates[i]) || !deathMatch(s.deathStates[i]) {
 			continue
 		}
-		s.deathStates[i] |= newFilter().addPlayer(player)
+		s.deathStates[i] = s.deathStates[i].addPlayer(player)
 	}
 }
 
@@ -155,6 +169,30 @@ func (s *State) GetPlayerCampProb(player int, playerStates ...PlayerState) map[C
 	return prob
 }
 
+func (s *State) GetPlayerLiveProb(player int, playerStates ...PlayerState) map[Status]float64 {
+	matchCamp := s.getMatchCamp(playerStates)
+	matchPlayer := s.getMatchPlayer(player)
+	matchRole := s.getMatchRole(playerStates)
+	matchDeath := s.getMatchDeath(playerStates)
+
+	aliveCount := 0
+	deathCount := 0
+	for _, roleState := range s.states {
+		if !roleState.MatchCamp(matchCamp) {
+			continue
+		}
+		alive, death := roleState.MatchAndCountDeath(matchRole, matchDeath, matchPlayer)
+		aliveCount += alive
+		deathCount += death
+	}
+
+	prob := make(map[Status]float64, 2)
+	prob[Alive] = float64(aliveCount) / float64(aliveCount+deathCount)
+	prob[Dead] = float64(deathCount) / float64(aliveCount+deathCount)
+
+	return prob
+}
+
 func (s *State) RemoveIfMatch(playerStates ...PlayerState) {
 	if playerStates == nil {
 		return
@@ -176,10 +214,6 @@ func (s *State) RemoveIfMatch(playerStates ...PlayerState) {
 }
 
 func (s *State) KillIfMatch(player int, playerStates ...PlayerState) {
-	if playerStates == nil {
-		return
-	}
-
 	matchCamp := s.getMatchCamp(playerStates)
 	matchRole := s.getMatchRole(playerStates)
 	matchDeath := s.getMatchDeath(playerStates)
@@ -389,4 +423,5 @@ func (s *State) removeIfMatch(match func(rs *RoleState) bool) {
 		i++
 	}
 	s.states = s.states[:n-r]
+	s.stateCount = total
 }
